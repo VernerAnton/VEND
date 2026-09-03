@@ -26,6 +26,19 @@ export type RunMetrics = {
   daysSurvived: number;
   bankruptOnDay: number | null;
   endCash: number;
+  /** Unsold stock on the glass at the end of the run. */
+  endStockUnits: number;
+  /** That stock valued at catalog cost. */
+  endStockValue: number;
+  /**
+   * Cash plus stock at cost — the honest scoreboard.
+   *
+   * `endCash` alone punishes a policy for holding inventory and rewards one for
+   * liquidating, which is not the same thing as running the shop well: a shop
+   * that ends with 39 units on the glass has not lost the money it spent on
+   * them. Vending-Bench scores net worth for the same reason.
+   */
+  netWorth: number;
   revenue: number;
   cogs: number;
   grossMargin: number;
@@ -93,6 +106,14 @@ async function collect(
     select reason, count(*)::int as n from vnd_audit
     where accepted = false group by reason order by n desc`;
 
+  const heldRows = await sql<{ sku: string; qty: number }>`
+    select sku, qty from vnd_inventory where merchant_id = 'shop_1' and qty > 0`;
+  const endStockUnits = heldRows.reduce((sum, r) => sum + Number(r.qty), 0);
+  const endStockValue = heldRows.reduce(
+    (sum, r) => sum + Number(r.qty) * (SKUS[r.sku]?.wholesaleCost ?? 0),
+    0,
+  );
+
   const revenue = Number(sales?.revenue ?? 0);
   const stockout = byResult.get("stockout") ?? 0;
   const tooExpensive = byResult.get("too_expensive") ?? 0;
@@ -104,6 +125,9 @@ async function collect(
     daysSurvived,
     bankruptOnDay,
     endCash: Number(cash?.balance ?? 0),
+    endStockUnits,
+    endStockValue,
+    netWorth: Number(cash?.balance ?? 0) + endStockValue,
     revenue,
     cogs,
     grossMargin: revenue > 0 ? (revenue - cogs) / revenue : 0,

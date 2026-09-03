@@ -64,10 +64,12 @@ const median = (xs: number[]) =>
 const mean = (xs: number[]) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 0);
 
 function summarize(rows: RunMetrics[]) {
-  const cash = [...rows.map((r) => r.endCash)].sort((a, b) => a - b);
+  const cash = [...rows.map((r) => r.netWorth)].sort((a, b) => a - b);
   return {
     policy: rows[0].policy,
     runs: rows.length,
+    medianNetWorth: median(rows.map((r) => r.netWorth)),
+    medianStock: median(rows.map((r) => r.endStockValue)),
     medianCash: median(rows.map((r) => r.endCash)),
     meanCash: Math.round(mean(rows.map((r) => r.endCash))),
     p05Cash: pct(cash, 5),
@@ -123,34 +125,36 @@ async function main() {
     await db.close();
   }
 
-  console.log("\n" + "-".repeat(104));
+  console.log("\n" + "-".repeat(119));
   console.log(
-    `${"policy".padEnd(14)}${pad("med cash", 10)}${pad("p05", 8)}${pad("p95", 8)}` +
+    `${"policy".padEnd(14)}${pad("net worth", 11)}${pad("p05", 8)}${pad("p95", 8)}` +
+      `${pad("cash", 8)}${pad("stock", 7)}` +
       `${pad("died", 6)}${pad("med days", 10)}${pad("revenue", 10)}${pad("margin", 9)}` +
       `${pad("unfilled", 10)}${pad("spoil", 7)}${pad("overflow", 10)}`,
   );
-  console.log("-".repeat(104));
+  console.log("-".repeat(119));
   for (const policy of args.policies) {
     const s = summarize(byPolicy.get(policy.id)!);
     console.log(
-      `${s.policy.padEnd(14)}${pad(s.medianCash, 10)}${pad(s.p05Cash, 8)}${pad(s.p95Cash, 8)}` +
+      `${s.policy.padEnd(14)}${pad(s.medianNetWorth, 11)}${pad(s.p05Cash, 8)}${pad(s.p95Cash, 8)}` +
+        `${pad(s.medianCash, 8)}${pad(s.medianStock, 7)}` +
         `${pad(`${s.died}/${s.runs}`, 6)}${pad(s.medianSurvived, 10)}${pad(s.medianRevenue, 10)}` +
         `${pad(`${(s.medianMargin * 100).toFixed(1)}%`, 9)}${pad(s.medianUnfilled, 10)}` +
         `${pad(s.medianSpoilUnits, 7)}${pad(s.medianOverflow, 10)}`,
     );
   }
-  console.log("-".repeat(104));
+  console.log("-".repeat(119));
 
   // Paired deltas: the actual discriminating-power readout. Per seed, how much
   // did each policy beat the baseline by? A ladder whose rungs overlap here is
   // a world that cannot tell operators apart, which is the finding that matters.
   const base = byPolicy.get(args.baseline);
   if (base) {
-    console.log(`\nPaired vs '${args.baseline}' (same seed, end cash):\n`);
+    console.log(`\nPaired vs '${args.baseline}' (same seed, net worth):\n`);
     for (const policy of args.policies) {
       if (policy.id === args.baseline) continue;
       const rows = byPolicy.get(policy.id)!;
-      const deltas = rows.map((r, i) => r.endCash - base[i].endCash);
+      const deltas = rows.map((r, i) => r.netWorth - base[i].netWorth);
       const wins = deltas.filter((d) => d > 0).length;
       const sorted = [...deltas].sort((a, b) => a - b);
       console.log(
