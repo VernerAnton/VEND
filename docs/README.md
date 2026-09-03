@@ -6,6 +6,8 @@ This folder is research other models produced while the shop was being designed.
 
 | Path | Read when |
 | --- | --- |
+| [NEXT.md](./NEXT.md) | You want to know what is deliberately unbuilt, and what to do next |
+| [research/BASELINE.md](./research/BASELINE.md) | You want the measured numbers before changing a knob |
 | [research/COMPARISON.md](./research/COMPARISON.md) | You want the fight: live vs Perplexity vs Gemini |
 | [research/perplexity-corner-shop.md](./research/perplexity-corner-shop.md) | Original “extend don’t rewrite” spec |
 | [research/gemini-micro-retail.md](./research/gemini-micro-retail.md) | Gemini’s heavier sim, text-only |
