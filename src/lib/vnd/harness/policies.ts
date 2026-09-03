@@ -261,8 +261,48 @@ const heuristic: Policy = {
   },
 };
 
+/**
+ * Diagnostic rung: par restock at a FIXED markup. Not part of the ladder —
+ * sweeping a range of these traces the world's price/volume curve directly,
+ * which is how you find out whether the pricing decision has any depth in it
+ * or whether one multiplier dominates everything.
+ */
+export function fixedMarkup(mult: number): Policy {
+  return {
+    id: `markup-${mult.toFixed(2)}`,
+    blurb: `Par restock, every core SKU listed at ${mult.toFixed(2)}x catalog cost.`,
+    act: async (world, act) => {
+      let cash = world.shopCash;
+      for (const sku of CORE_SKUS) {
+        const def = SKUS[sku];
+        const inv = world.inventory.find((i) => i.sku === sku);
+        const inbound = world.incoming
+          .filter((i) => i.sku === sku)
+          .reduce((s, i) => s + i.qty, 0);
+        const onHand = (inv?.qty ?? 0) + inbound;
+        const supplier = bulkFor(sku);
+        if (onHand < 4 && supplier) {
+          const unit = Math.max(1, Math.round((def.wholesaleCost * supplier.costBps) / 10000));
+          const need = Math.max(supplier.moq, Math.min(supplier.maxQty, 8 - onHand));
+          const affordable = Math.min(need, Math.floor(cash / unit));
+          if (affordable >= supplier.moq) {
+            await act.order(sku, affordable, supplier.id);
+            cash -= unit * affordable;
+          }
+        }
+        const want = Math.max(def.wholesaleCost, Math.round(def.wholesaleCost * mult));
+        if ((inv?.listedPrice ?? null) !== want) await act.price(sku, want);
+      }
+      await answerBeggars(world, act);
+    },
+  };
+}
+
+/** The markup range swept by `--probe`. */
+export const PROBE: Policy[] = [1.1, 1.2, 1.3, 1.4, 1.5, 1.7].map(fixedMarkup);
+
 export const LADDER: Policy[] = [noop, par, greedyPrice, heuristic];
 
 export function policyById(id: string): Policy | undefined {
-  return LADDER.find((p) => p.id === id);
+  return [...LADDER, ...PROBE].find((p) => p.id === id);
 }

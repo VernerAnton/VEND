@@ -99,7 +99,7 @@ From **Gemini** (unit economics, not the paper stack)
 - LLM beggar swarm
 - Anything in `gemini-hosting.md` that rewrites the economy
 
-## 30-day dummy bar (live, until re-swept)
+## 30-day dummy bar (live, **now swept** — see [BASELINE.md](./BASELINE.md))
 
 Autopilot on, 1.3×, scripted street only. Cash should **wobble**, not explode.
 
@@ -107,6 +107,12 @@ If dummy ends >> 1500 with no stockouts, overhead is too soft (Gemini’s critiq
 If dummy is dead by day 10 with full shelves, overhead is too hard or visits too thin.
 
 Do not add escrow to “fix” that. Change rent, visits, or add a 3-day food SKU.
+
+**This section is no longer a guess.** [BASELINE.md](./BASELINE.md) has the measured
+numbers: four reference policies × 30 shared seeds × 30 days, run against the live
+engine by `npm run vnd:sweep`. Argue about rent, visits and the 3-day SKU from that
+table rather than from Gemini’s or Perplexity’s — both describe games with different
+knobs than this one.
 
 ## If you are an AI asked to “implement the Gemini report”
 

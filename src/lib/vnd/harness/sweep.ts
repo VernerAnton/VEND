@@ -15,7 +15,7 @@
  */
 import { writeFile } from "node:fs/promises";
 import { freshWorld } from "./db.ts";
-import { LADDER, policyById, type Policy } from "./policies.ts";
+import { LADDER, PROBE, policyById, type Policy } from "./policies.ts";
 import { runOne, type RunMetrics } from "./run.ts";
 
 type Args = {
@@ -32,7 +32,10 @@ function parseArgs(argv: string[]): Args {
     return i >= 0 ? argv[i + 1] : undefined;
   };
   const names = get("--policies");
-  const policies = names
+  // --probe traces the price/volume curve instead of running the ladder.
+  const policies = argv.includes("--probe")
+    ? PROBE
+    : names
     ? names.split(",").map((n) => {
         const p = policyById(n.trim());
         if (!p)
