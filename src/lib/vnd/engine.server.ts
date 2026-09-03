@@ -9,7 +9,7 @@ import {
   START_CASH_CUSTOMER,
   START_CASH_MERCHANT,
   catalogList,
-} from "./catalog";
+} from "./catalog.ts";
 import {
   ARCHETYPES,
   DAILY_POWER,
@@ -29,14 +29,14 @@ import {
   unitCost,
   visitCount,
   type EventId,
-} from "./sim";
+} from "./sim.ts";
 import type {
   ActionResult,
   Actor,
   InventoryRow,
   Role,
   WorldState,
-} from "./types";
+} from "./types.ts";
 
 const SHOP = "shop_1";
 const HUMAN = "human_1";
@@ -104,10 +104,24 @@ async function transfer(
   ref: string | null,
 ) {
   if (amount <= 0) throw new Error("amount must be positive");
-  const src = await balanceOf(sql, fromId);
-  if (src < amount) throw new Error("insufficient_funds");
   const d = await dayOf(sql);
-  await sql`update vnd_accounts set balance = balance - ${amount} where actor_id = ${fromId}`;
+  // Conditional debit: the balance test and the write are ONE statement, so two
+  // concurrent settlements cannot both pass a stale check and overdraw the
+  // account. The previous read-then-update pair let both callers observe the
+  // same balance and spend it twice -- the exact race an HTTP operator polling
+  // while the sim ticks would produce. `vnd_accounts.balance` also carries a
+  // non-negative check constraint as a backstop (0004_vnd_integrity.sql).
+  //
+  // Known limit: the debit, the credit and the ledger insert are still three
+  // statements. Wrapping them needs a transaction() on the shared `Sql` surface
+  // in src/lib/db.ts (also used by auth + app-data), deferred until the world
+  // HTTP API justifies touching that. The credit cannot fail in practice: every
+  // `toId` is an actor seeded by ensureWorld() with an account row.
+  const debited = await sql<{ actor_id: string }>`
+    update vnd_accounts set balance = balance - ${amount}
+    where actor_id = ${fromId} and balance >= ${amount}
+    returning actor_id`;
+  if (!debited.length) throw new Error("insufficient_funds");
   await sql`update vnd_accounts set balance = balance + ${amount} where actor_id = ${toId}`;
   await sql`insert into vnd_ledger(day, from_id, to_id, amount, memo, ref)
     values (${d}, ${fromId}, ${toId}, ${amount}, ${memo}, ${ref})`;
