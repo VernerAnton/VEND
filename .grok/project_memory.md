@@ -1,0 +1,5 @@
+- Project: closed fake-economy harness for plugging in the user's own AI merchant system (not building the AI agent). Goal is circulating fake money + inventory with a ledger the model cannot talk away. [2026-09-03]
+- Scope split: Grok builds economy (ledger, catalog, orders, clock, APIs, audit log, dummy merchant). User builds/connects the AI operator (complex multi-agent + persistent SQL memory). [2026-09-03]
+- Delivery: local project first; will go to user's GitHub later — do not push. [2026-09-03]
+- Runtime plan: Python HTTP API + SQLite world state; dummy merchant as stand-in client until user attaches. [2026-09-03]
+- Inspired by Anthropic/Andon Project Vend and Vending-Bench; currency is non-redeemable play money only. [2026-09-03]

@@ -1,0 +1,36 @@
+{
+  "url": "http://127.0.0.1:8080/",
+  "viewports": {
+    "desktop": {
+      "width": 1280,
+      "height": 800,
+      "status": 200,
+      "title": "Vend",
+      "hasCanvas": false,
+      "bodyTextLen": 122,
+      "bodyTextHash": "71419f457343f43e11f404aa43b58a16f7e810bbd0e9fbf41634e6f2950df622",
+      "bodyTextPrefix": "CLOSED CIRCUIT Vend Play money only. Talk cannot move a unit. Th",
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "screenshot": "/workspace/screenshots/app-builder-preview.png"
+    },
+    "mobile": {
+      "width": 390,
+      "height": 844,
+      "status": 200,
+      "title": "Vend",
+      "hasCanvas": false,
+      "bodyTextLen": 122,
+      "bodyTextHash": "71419f457343f43e11f404aa43b58a16f7e810bbd0e9fbf41634e6f2950df622",
+      "bodyTextPrefix": "CLOSED CIRCUIT Vend Play money only. Talk cannot move a unit. Th",
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "screenshot": "/workspace/screenshots/app-builder-preview-mobile.png"
+    }
+  },
+  "brandWarnings": [],
+  "authWarnings": [],
+  "verdictFile": "/workspace/screenshots/app-builder-preview.json"
+}

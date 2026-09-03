@@ -1,0 +1,40 @@
+{
+  "url": "http://127.0.0.1:8081/",
+  "viewports": {
+    "desktop": {
+      "width": 1280,
+      "height": 800,
+      "status": 200,
+      "title": "Vend",
+      "hasCanvas": false,
+      "bodyTextLen": 122,
+      "bodyTextHash": "71419f457343f43e11f404aa43b58a16f7e810bbd0e9fbf41634e6f2950df622",
+      "bodyTextPrefix": "CLOSED CIRCUIT Vend Play money only. Talk cannot move a unit. Th",
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "screenshot": "/workspace/screenshots/app-builder-built.png"
+    },
+    "mobile": {
+      "width": 390,
+      "height": 844,
+      "status": 200,
+      "title": "Vend",
+      "hasCanvas": false,
+      "bodyTextLen": 384,
+      "bodyTextHash": "9ca4f785f55752868e2c0c482af25398eda54b1dc7f4ae7b428e181940ff5e2f",
+      "bodyTextPrefix": "CLOSED CIRCUIT Vend Play money only. Talk cannot move a unit. Th",
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "screenshot": "/workspace/screenshots/app-builder-built-mobile.png"
+    }
+  },
+  "brandWarnings": [],
+  "authWarnings": [],
+  "verdictFile": "/workspace/screenshots/app-builder-built.json",
+  "divergesFromBaseline": true,
+  "baselineReasons": [
+    "mobile: body text changed (122 -> 384 chars, hash mismatch)"
+  ]
+}
