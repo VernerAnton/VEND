@@ -39,6 +39,22 @@ export type VisitDecision =
 export type Rng = () => number;
 
 export const SLOT_CAP = 16;
+/**
+ * Spread of individual reservation prices around their archetype's mean, as a
+ * fraction of that mean.
+ *
+ * With a single hard threshold per archetype, demand fell off in steps and the
+ * profit-maximising price was a CONSTANT any operator finds by trying a few
+ * numbers -- measured in docs/research/BASELINE.md, where a flat 1.40x markup
+ * beat every adaptive policy on 30/30 seeds. A per-customer spread turns that
+ * step function into a curve, so pricing becomes estimation under noise rather
+ * than a lookup.
+ *
+ * This is NOT a logit/random-utility model: the demand curve here is simply the
+ * survival function of this spread, parameterised by something interpretable
+ * ("how much do people vary") instead of an unfittable coefficient.
+ */
+export const RESERVATION_SIGMA = 0.15;
 export const NPC_VISITS_BASE = 12;
 export const DAILY_POWER = 4;
 export const UNPAID_RENT_LIMIT = 3;
@@ -236,6 +252,36 @@ export function mulberry32(seed: number): Rng {
   };
 }
 
+/**
+ * Zero-mean noise, standard deviation 1, bounded to +/-3.
+ *
+ * Sum of three uniforms: mean 1.5, variance 3/12, so (sum - 1.5) * 2 has sd 1.
+ * Cheap, needs no Box-Muller, and stays deterministic on a seeded `Rng`.
+ */
+export function gaussish(rng: Rng): number {
+  return (rng() + rng() + rng() - 1.5) * 2;
+}
+
+/**
+ * Poisson draw (Knuth). Used for daily arrivals, where lambda is ~7-17 so the
+ * loop is short.
+ *
+ * Why not the old uniform jitter: `base + floor(rng()*5) - 2` is hard-bounded
+ * at +/-2, so the shop never sees a dead day or a rush. Poisson's
+ * variance-equals-mean gives those tails, and tails are what force a plan to be
+ * revised rather than executed.
+ */
+export function poisson(rng: Rng, lambda: number): number {
+  const limit = Math.exp(-lambda);
+  let k = 0;
+  let p = 1;
+  do {
+    k += 1;
+    p *= rng();
+  } while (p > limit);
+  return k - 1;
+}
+
 export function dayRng(seed: number, day: number): Rng {
   return mulberry32((seed ^ Math.imul(day + 1, 0x9e3779b9)) >>> 0);
 }
@@ -260,9 +306,11 @@ export function rollEvent(rng: Rng): EventId {
 }
 
 export function visitCount(rng: Rng, event: EventId): number {
-  const base = NPC_VISITS_BASE + EVENTS[event].visitMod;
-  const jitter = Math.floor(rng() * 5) - 2;
-  return Math.max(3, base + jitter);
+  // No floor beyond zero: a genuinely dead day is a legitimate outcome and one
+  // of the situations an operator has to survive. The old `Math.max(3, ...)`
+  // guaranteed traffic every single day.
+  const lambda = Math.max(1, NPC_VISITS_BASE + EVENTS[event].visitMod);
+  return poisson(rng, lambda);
 }
 
 export function unitCost(wholesale: number, costBps: number): number {
@@ -328,7 +376,12 @@ export function decideVisit(
   }
 
   const listed = chosen.listedPrice ?? 0;
-  const cap = Math.round((chosen.wholesaleCost * arch.reservationBps) / 10000);
+  // Each customer draws their own reservation around the archetype mean, so two
+  // regulars do not share one threshold. Bounded at +/-3 sigma, so the
+  // multiplier stays positive for every archetype.
+  const spread = 1 + RESERVATION_SIGMA * gaussish(rng);
+  const capBps = arch.reservationBps * spread;
+  const cap = Math.round((chosen.wholesaleCost * capBps) / 10000);
   const reservation = event === "payday" ? Math.round(cap * 1.15) : cap;
 
   if (listed > reservation || rng() > arch.buyChance) {

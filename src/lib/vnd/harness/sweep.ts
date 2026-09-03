@@ -45,7 +45,9 @@ function parseArgs(argv: string[]): Args {
     : LADDER;
   return {
     seeds: Number(get("--seeds") ?? 30),
-    days: Number(get("--days") ?? 30),
+    // 60 days, not 30: `noop` survives a 30-day run in every seed and is not
+    // unplugged until day 47, so a 30-day sweep tests nothing about solvency.
+    days: Number(get("--days") ?? 60),
     policies,
     csv: get("--csv") ?? null,
     baseline: get("--baseline") ?? "par",

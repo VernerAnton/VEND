@@ -249,10 +249,13 @@ const heuristic: Policy = {
         }
       }
 
-      // Price: start near the top of the regular's reservation band (1.45x) and
-      // step back whenever walk-aways say we are over it.
+      // Price: start at the measured profit peak (1.40x -- see
+      // docs/research/BASELINE.md) and step back whenever walk-aways say we are
+      // over it. This was 1.45x, which is past the peak and across the office
+      // run's threshold; that, not the forecasting, is why this rung lost to a
+      // flat 1.3x restock in the first sweep.
       const rejects = m.miss[sku] ?? 0;
-      const ceiling = Math.round(def.wholesaleCost * 1.45);
+      const ceiling = Math.round(def.wholesaleCost * 1.4);
       const want = Math.max(def.wholesaleCost, ceiling - Math.min(rejects, 4));
       if ((inv?.listedPrice ?? null) !== want) await act.price(sku, want);
       if (rejects > 0) m.miss[sku] = rejects - 1; // decay, so a price can recover
